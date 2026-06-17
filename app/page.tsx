@@ -1,7 +1,10 @@
-import Image from "next/image";
+import ChessBoardComponent from '../components/ChessBoard'
 
 export default function Home() {
   return (
-    <div>Chess</div>
+    <main>
+        <h1>Play Chess</h1>
+        <ChessBoardComponent />
+    </main>
   );
 }
