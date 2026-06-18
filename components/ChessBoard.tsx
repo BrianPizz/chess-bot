@@ -19,6 +19,19 @@ export default function ChessBoardComponent() {
     // Copy of current game
     const gameCopy = new Chess(game.fen());
 
+    // Random computer move
+    function makeComputerMove(gameCopy: Chess) {
+    // find all legal moves
+    const possibleMoves = gameCopy.moves();
+
+    if (possibleMoves.length === 0) return;
+    // Pick a random move
+    const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+    const randomMove = possibleMoves[randomIndex];
+    // Make selected move
+    gameCopy.move(randomMove);
+  }
+
     // Attempts to make move
     const move = gameCopy.move({
       from: sourceSquare,
@@ -30,6 +43,10 @@ export default function ChessBoardComponent() {
     if (move === null) {
       return false;
     }
+
+    // Computer response move
+    makeComputerMove(gameCopy);
+
     // Save updated game state and re-render the board
     setGame(gameCopy);
     // Return legal move
