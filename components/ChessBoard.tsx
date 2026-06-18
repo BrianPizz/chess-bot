@@ -11,6 +11,8 @@ export default function ChessBoardComponent() {
   // Store whether computer is thinking
   const [isThinking, setIsThinking] = useState(false);
 
+  const [viewedMoveIndex, setViewedMoveIndex] = useState<number | null>(null);
+
   // Random computer move
   function makeComputerMove(gameCopy: Chess) {
     // Find all legal moves
@@ -105,43 +107,11 @@ export default function ChessBoardComponent() {
       }, 500);
     }
 
+    setViewedMoveIndex(null);
+
     // Return legal move
     return true;
   }
-
-  // Chessboard configurations
-  const chessboardOptions = {
-    // Current board position as FEN string
-    position: game.fen(),
-
-    // Light square color
-    lightSquareStyle: {
-      backgroundColor: "#eeeed2",
-    },
-
-    // Dark square color
-    darkSquareStyle: {
-      backgroundColor: "#769656",
-    },
-
-    // Pass move state/verification
-    onPieceDrop,
-  };
-
-  // Move history array
-  const moves = game.history();
-
-  // Group moves into White/Black pairs
-  const movePairs = [];
-
-  for (let i = 0; i < moves.length; i += 2) {
-    movePairs.push({
-      moveNumber: Math.floor(i / 2) + 1,
-      white: moves[i],
-      black: moves[i + 1] || "",
-    });
-  }
-
   // Get detailed move history so we can detect captures
   const detailedMoves = game.history({ verbose: true });
 
@@ -170,50 +140,142 @@ export default function ChessBoardComponent() {
     }
   });
 
-return (
+  // Full move history
+  const moves = game.history();
+
+  // Group moves into White/Black pairs
+  const movePairs = [];
+
+  for (let i = 0; i < moves.length; i += 2) {
+    movePairs.push({
+      moveNumber: Math.floor(i / 2) + 1,
+      white: moves[i],
+      black: moves[i + 1] || "",
+    });
+  }
+
+  // Decide which board position to show
+  function getDisplayedPosition() {
+    if (viewedMoveIndex === null) {
+      return game.fen();
+    }
+
+    const previewGame = new Chess();
+
+    for (let i = 0; i < viewedMoveIndex; i++) {
+      previewGame.move(moves[i]);
+    }
+
+    return previewGame.fen();
+  }
+
+  // Chessboard configurations
+  const chessboardOptions = {
+    // Current board position as FEN string
+    position: getDisplayedPosition(),
+
+    // Light square color
+    lightSquareStyle: {
+      backgroundColor: "#eeeed2",
+    },
+
+    // Dark square color
+    darkSquareStyle: {
+      backgroundColor: "#769656",
+    },
+
+    // Pass move state/verification
+    onPieceDrop,
+
+    // Only allow dragging when viewing the current position
+    allowDragging:
+      viewedMoveIndex === null && !isThinking && !game.isGameOver(),
+  };
+
+  return (
     <div className="flex justify-center">
-  <div className="flex flex-col lg:flex-row gap-6 p-4 lg:p-8 items-start">
-    {/* Board column */}
-    <div className="w-full max-w-[calc(100vw-32px)] md:max-w-[650px] lg:max-w-[800px] xl:max-w-[900px]">
-  <h2 className="mb-3 text-xl font-semibold">
-    {getGameStatus()}
-  </h2>
+      <div className="flex flex-col lg:flex-row gap-6 p-4 lg:p-8 items-start">
+        {/* Board column */}
+        <div className="w-full max-w-[calc(100vw-32px)] md:max-w-[650px] lg:max-w-[800px] xl:max-w-[900px]">
+          <h2 className="mb-3 text-xl font-semibold">{getGameStatus()}</h2>
 
-  {/* Board square wrapper */}
-  <div className="aspect-square overflow-hidden">
-    <Chessboard options={chessboardOptions} />
-  </div>
-</div>
+          {/* Board square wrapper */}
+          <div className="aspect-square overflow-hidden">
+            <Chessboard options={chessboardOptions} />
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => setViewedMoveIndex(0)}
+              className="rounded bg-gray-200 px-3 py-1"
+            >
+              Start
+            </button>
 
-    {/* Side panel */}
-    <div className="w-full lg:w-[300px] max-h-[70vh] overflow-y-auto rounded-lg bg-gray-100 p-4">
-      <h3 className="mb-2 text-lg font-bold">Move History</h3>
+            <button
+              onClick={() =>
+                setViewedMoveIndex((current) => {
+                  const index = current === null ? moves.length : current;
+                  return Math.max(0, index - 1);
+                })
+              }
+              className="rounded bg-gray-200 px-3 py-1"
+            >
+              Previous
+            </button>
 
-      <table className="w-full">
-        <tbody>
-          {movePairs.map((turn) => (
-            <tr key={turn.moveNumber}>
-              <td className="pr-3 text-gray-500">{turn.moveNumber}.</td>
-              <td className="w-14">{turn.white}</td>
-              <td className="w-14">{turn.black}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            <button
+              onClick={() =>
+                setViewedMoveIndex((current) => {
+                  if (current === null) return null;
 
-      <h3 className="mt-6 mb-2 text-lg font-bold">Captured Pieces</h3>
+                  const nextIndex = current + 1;
 
-      <p>
-        White captured:{" "}
-        {whiteCaptured.length > 0 ? whiteCaptured.join(" ") : "None"}
-      </p>
+                  return nextIndex >= moves.length ? null : nextIndex;
+                })
+              }
+              className="rounded bg-gray-200 px-3 py-1"
+            >
+              Next
+            </button>
 
-      <p>
-        Black captured:{" "}
-        {blackCaptured.length > 0 ? blackCaptured.join(" ") : "None"}
-      </p>
+            <button
+              onClick={() => setViewedMoveIndex(null)}
+              className="rounded bg-gray-200 px-3 py-1"
+            >
+              Current
+            </button>
+          </div>
+        </div>
+
+        {/* Side panel */}
+        <div className="w-full lg:w-[300px] max-h-[70vh] overflow-y-auto rounded-lg bg-gray-100 p-4">
+          <h3 className="mb-2 text-lg font-bold">Move History</h3>
+
+          <table className="w-full">
+            <tbody>
+              {movePairs.map((turn) => (
+                <tr key={turn.moveNumber}>
+                  <td className="pr-3 text-gray-500">{turn.moveNumber}.</td>
+                  <td className="w-14">{turn.white}</td>
+                  <td className="w-14">{turn.black}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3 className="mt-6 mb-2 text-lg font-bold">Captured Pieces</h3>
+
+          <p>
+            White captured:{" "}
+            {whiteCaptured.length > 0 ? whiteCaptured.join(" ") : "None"}
+          </p>
+
+          <p>
+            Black captured:{" "}
+            {blackCaptured.length > 0 ? blackCaptured.join(" ") : "None"}
+          </p>
+        </div>
+      </div>
     </div>
-  </div>
-  </div>
-);
+  );
 }
