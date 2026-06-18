@@ -142,25 +142,78 @@ export default function ChessBoardComponent() {
     });
   }
 
-  return (
-    <div>
-      <h2>{getGameStatus()}</h2>
+  // Get detailed move history so we can detect captures
+  const detailedMoves = game.history({ verbose: true });
 
-      <Chessboard options={chessboardOptions} />
+  // Track captured pieces
+  const whiteCaptured: string[] = [];
+  const blackCaptured: string[] = [];
 
-      <h3>Move History</h3>
+  // Convert chess.js piece letters into chess symbols
+  const pieceSymbols: Record<string, string> = {
+    p: "♟",
+    n: "♞",
+    b: "♝",
+    r: "♜",
+    q: "♛",
+    k: "♚",
+  };
 
-      <table>
+  // Add pieces to captured lists
+  detailedMoves.forEach((move) => {
+    if (move.captured) {
+      if (move.color === "w") {
+        whiteCaptured.push(pieceSymbols[move.captured]);
+      } else {
+        blackCaptured.push(pieceSymbols[move.captured]);
+      }
+    }
+  });
+
+return (
+    <div className="flex justify-center">
+  <div className="flex flex-col lg:flex-row gap-6 p-4 lg:p-8 items-start">
+    {/* Board column */}
+    <div className="w-full max-w-[calc(100vw-32px)] md:max-w-[650px] lg:max-w-[800px] xl:max-w-[900px]">
+  <h2 className="mb-3 text-xl font-semibold">
+    {getGameStatus()}
+  </h2>
+
+  {/* Board square wrapper */}
+  <div className="aspect-square overflow-hidden">
+    <Chessboard options={chessboardOptions} />
+  </div>
+</div>
+
+    {/* Side panel */}
+    <div className="w-full lg:w-[300px] max-h-[70vh] overflow-y-auto rounded-lg bg-gray-100 p-4">
+      <h3 className="mb-2 text-lg font-bold">Move History</h3>
+
+      <table className="w-full">
         <tbody>
           {movePairs.map((turn) => (
             <tr key={turn.moveNumber}>
-              <td>{turn.moveNumber}.</td>
-              <td>{turn.white}</td>
-              <td>{turn.black}</td>
+              <td className="pr-3 text-gray-500">{turn.moveNumber}.</td>
+              <td className="w-14">{turn.white}</td>
+              <td className="w-14">{turn.black}</td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <h3 className="mt-6 mb-2 text-lg font-bold">Captured Pieces</h3>
+
+      <p>
+        White captured:{" "}
+        {whiteCaptured.length > 0 ? whiteCaptured.join(" ") : "None"}
+      </p>
+
+      <p>
+        Black captured:{" "}
+        {blackCaptured.length > 0 ? blackCaptured.join(" ") : "None"}
+      </p>
     </div>
-  );
+  </div>
+  </div>
+);
 }
