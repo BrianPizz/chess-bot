@@ -13,6 +13,8 @@ export default function ChessBoardComponent() {
 
   const [viewedMoveIndex, setViewedMoveIndex] = useState<number | null>(null);
 
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+
   // Random computer move
   function makeComputerMove(gameCopy: Chess) {
     // Find all legal moves
@@ -109,6 +111,7 @@ export default function ChessBoardComponent() {
 
     setViewedMoveIndex(null);
 
+    setSelectedSquare(null);
     // Return legal move
     return true;
   }
@@ -169,6 +172,42 @@ export default function ChessBoardComponent() {
     return previewGame.fen();
   }
 
+  // Highlight legal move options for the selected piece
+const squareStyles: Record<string, React.CSSProperties> = {};
+
+if (selectedSquare && viewedMoveIndex === null) {
+  squareStyles[selectedSquare] = {
+    backgroundColor: "rgba(255, 255, 0, 0.8)",
+  };
+
+  const legalMoves = game.moves({
+    square: selectedSquare as any,
+    verbose: true,
+  });
+
+  legalMoves.forEach((move) => {
+    squareStyles[move.to] = {
+      backgroundColor: "rgba(255, 255, 0, 0.5)",
+    };
+  });
+}
+
+// When a square is clicked, show legal moves for that piece
+function onSquareClick({ square }: { square: string }) {
+  if (viewedMoveIndex !== null || isThinking || game.isGameOver()) {
+    return;
+  }
+
+  const piece = game.get(square as any);
+
+  if (!piece || piece.color !== "w") {
+    setSelectedSquare(null);
+    return;
+  }
+
+  setSelectedSquare(square);
+}
+
   // Chessboard configurations
   const chessboardOptions = {
     // Current board position as FEN string
@@ -183,6 +222,10 @@ export default function ChessBoardComponent() {
     darkSquareStyle: {
       backgroundColor: "#769656",
     },
+
+    squareStyles,
+
+    onSquareClick,
 
     // Pass move state/verification
     onPieceDrop,
@@ -206,7 +249,7 @@ export default function ChessBoardComponent() {
           <div className="mt-3 flex gap-2">
             <button
               onClick={() => setViewedMoveIndex(0)}
-              className="rounded bg-gray-200 px-3 py-1"
+              className="rounded bg-gray-200 hover:bg-gray-300 px-3 py-1 cursor-pointer"
             >
               Start
             </button>
@@ -218,7 +261,7 @@ export default function ChessBoardComponent() {
                   return Math.max(0, index - 1);
                 })
               }
-              className="rounded bg-gray-200 px-3 py-1"
+              className="rounded bg-gray-200 hover:bg-gray-300 px-3 py-1 cursor-pointer"
             >
               Previous
             </button>
@@ -233,14 +276,14 @@ export default function ChessBoardComponent() {
                   return nextIndex >= moves.length ? null : nextIndex;
                 })
               }
-              className="rounded bg-gray-200 px-3 py-1"
+              className="rounded bg-gray-200 hover:bg-gray-300 px-3 py-1 cursor-pointer"
             >
               Next
             </button>
 
             <button
               onClick={() => setViewedMoveIndex(null)}
-              className="rounded bg-gray-200 px-3 py-1"
+              className="rounded bg-gray-200 hover:bg-gray-300 px-3 py-1 cursor-pointer"
             >
               Current
             </button>
