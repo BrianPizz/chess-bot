@@ -66,8 +66,11 @@ export default function ChessBoardComponent() {
     targetSquare,
   }: {
     sourceSquare: string;
-    targetSquare: string;
+    targetSquare: string | null;
   }) {
+    if (targetSquare === null) {
+      return false;
+    }
     // Prevent player from moving while computer is thinking
     if (isThinking) {
       return false;
