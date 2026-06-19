@@ -177,7 +177,7 @@ const squareStyles: Record<string, React.CSSProperties> = {};
 
 if (selectedSquare && viewedMoveIndex === null) {
   squareStyles[selectedSquare] = {
-    backgroundColor: "rgba(255, 255, 0, 0.8)",
+    backgroundColor: "rgba(255, 255, 0, 0.7)",
   };
 
   const legalMoves = game.moves({
@@ -187,25 +187,42 @@ if (selectedSquare && viewedMoveIndex === null) {
 
   legalMoves.forEach((move) => {
     squareStyles[move.to] = {
-      backgroundColor: "rgba(255, 255, 0, 0.5)",
+      backgroundColor: "rgba(255, 255, 0, 0.4)",
     };
   });
 }
 
-// When a square is clicked, show legal moves for that piece
+// When a square is clicked, either select a piece or move the selected piece
 function onSquareClick({ square }: { square: string }) {
   if (viewedMoveIndex !== null || isThinking || game.isGameOver()) {
     return;
   }
 
-  const piece = game.get(square as any);
+  const clickedPiece = game.get(square as any);
 
-  if (!piece || piece.color !== "w") {
-    setSelectedSquare(null);
+  // If no piece is currently selected, select a white piece
+  if (selectedSquare === null) {
+    if (clickedPiece && clickedPiece.color === "w") {
+      setSelectedSquare(square);
+    }
+
     return;
   }
 
-  setSelectedSquare(square);
+  // If clicking another white piece, switch selection
+  if (clickedPiece && clickedPiece.color === "w") {
+    setSelectedSquare(square);
+    return;
+  }
+
+  // Try to move selected piece to clicked square
+  onPieceDrop({
+    sourceSquare: selectedSquare,
+    targetSquare: square,
+  });
+
+  // Clear selection after attempting move
+  setSelectedSquare(null);
 }
 
   // Chessboard configurations
