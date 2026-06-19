@@ -3,6 +3,7 @@
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { useState } from "react";
+import { pieceThemes, PieceThemeName } from "./pieces";
 
 export default function ChessBoardComponent() {
   // Store current game state
@@ -14,6 +15,8 @@ export default function ChessBoardComponent() {
   const [viewedMoveIndex, setViewedMoveIndex] = useState<number | null>(null);
 
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+
+  const [pieceTheme, setPieceTheme] = useState<PieceThemeName>("cburnett");
 
   // Random computer move
   function makeComputerMove(gameCopy: Chess) {
@@ -173,57 +176,57 @@ export default function ChessBoardComponent() {
   }
 
   // Highlight legal move options for the selected piece
-const squareStyles: Record<string, React.CSSProperties> = {};
+  const squareStyles: Record<string, React.CSSProperties> = {};
 
-if (selectedSquare && viewedMoveIndex === null) {
-  squareStyles[selectedSquare] = {
-    backgroundColor: "rgba(255, 255, 0, 0.7)",
-  };
-
-  const legalMoves = game.moves({
-    square: selectedSquare as any,
-    verbose: true,
-  });
-
-  legalMoves.forEach((move) => {
-    squareStyles[move.to] = {
-      backgroundColor: "rgba(255, 255, 0, 0.4)",
+  if (selectedSquare && viewedMoveIndex === null) {
+    squareStyles[selectedSquare] = {
+      backgroundColor: "rgba(255, 255, 0, 0.7)",
     };
-  });
-}
 
-// When a square is clicked, either select a piece or move the selected piece
-function onSquareClick({ square }: { square: string }) {
-  if (viewedMoveIndex !== null || isThinking || game.isGameOver()) {
-    return;
+    const legalMoves = game.moves({
+      square: selectedSquare as any,
+      verbose: true,
+    });
+
+    legalMoves.forEach((move) => {
+      squareStyles[move.to] = {
+        backgroundColor: "rgba(255, 255, 0, 0.4)",
+      };
+    });
   }
 
-  const clickedPiece = game.get(square as any);
-
-  // If no piece is currently selected, select a white piece
-  if (selectedSquare === null) {
-    if (clickedPiece && clickedPiece.color === "w") {
-      setSelectedSquare(square);
+  // When a square is clicked, either select a piece or move the selected piece
+  function onSquareClick({ square }: { square: string }) {
+    if (viewedMoveIndex !== null || isThinking || game.isGameOver()) {
+      return;
     }
 
-    return;
+    const clickedPiece = game.get(square as any);
+
+    // If no piece is currently selected, select a white piece
+    if (selectedSquare === null) {
+      if (clickedPiece && clickedPiece.color === "w") {
+        setSelectedSquare(square);
+      }
+
+      return;
+    }
+
+    // If clicking another white piece, switch selection
+    if (clickedPiece && clickedPiece.color === "w") {
+      setSelectedSquare(square);
+      return;
+    }
+
+    // Try to move selected piece to clicked square
+    onPieceDrop({
+      sourceSquare: selectedSquare,
+      targetSquare: square,
+    });
+
+    // Clear selection after attempting move
+    setSelectedSquare(null);
   }
-
-  // If clicking another white piece, switch selection
-  if (clickedPiece && clickedPiece.color === "w") {
-    setSelectedSquare(square);
-    return;
-  }
-
-  // Try to move selected piece to clicked square
-  onPieceDrop({
-    sourceSquare: selectedSquare,
-    targetSquare: square,
-  });
-
-  // Clear selection after attempting move
-  setSelectedSquare(null);
-}
 
   // Chessboard configurations
   const chessboardOptions = {
@@ -246,6 +249,8 @@ function onSquareClick({ square }: { square: string }) {
 
     // Pass move state/verification
     onPieceDrop,
+
+    pieces: pieceThemes[pieceTheme],
 
     // Only allow dragging when viewing the current position
     allowDragging:
@@ -334,6 +339,21 @@ function onSquareClick({ square }: { square: string }) {
             Black captured:{" "}
             {blackCaptured.length > 0 ? blackCaptured.join(" ") : "None"}
           </p>
+          <div className="mt-6">
+            <label className="mb-2 block text-md font-semibold text-gray-700">
+              Piece Theme
+            </label>
+
+            <select
+              value={pieceTheme}
+              onChange={(e) => setPieceTheme(e.target.value as PieceThemeName)}
+              className="rounded border bg-white px-2 py-1"
+            >
+              <option value="cburnett">CBurnett</option>
+              <option value="fresca">Fresca</option>
+              <option value="fantasy">Fantasy</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
